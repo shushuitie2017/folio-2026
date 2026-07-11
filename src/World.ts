@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { Assets } from './Assets'
+import { convertMesh } from './Converted'
 import { Materials } from './Materials'
 import { PhysicsWorld } from './PhysicsWorld'
 import { boardTexture, letterTexture, markerTexture } from './textures'
@@ -20,12 +22,25 @@ export class World {
   container = new THREE.Group()
   clickables: Array<{ mesh: THREE.Object3D; url: string }> = []
 
-  constructor(private materials: Materials, private physics: PhysicsWorld) {
+  constructor(private materials: Materials, private physics: PhysicsWorld, private assets: Assets) {
     this.buildIntro()
     this.buildProjects()
     this.buildPlayground()
+    this.buildProps()
     this.buildLinks()
     this.buildMarkers()
+  }
+
+  /** Spawn a GLB prop: base.glb visuals + collision.glb physics proxies. */
+  private spawnProp(
+    name: 'bowlingBall' | 'bowlingPin' | 'brick' | 'cone',
+    position: THREE.Vector3,
+    mass: number,
+    rotationZ = 0
+  ): void {
+    const group = convertMesh(this.assets.models[`${name}Base`], this.materials)
+    this.container.add(group)
+    this.physics.addObjectFromCollision(this.assets.models[`${name}Collision`], { position, rotationZ, mass }, group)
   }
 
   /** Toy letter blocks spelling the title — drive through them. */
@@ -119,50 +134,39 @@ export class World {
     this.clickables.push({ mesh: board, url: entry.url })
   }
 
-  /** Bowling corner: ten pins and a ball. */
+  /** Bowling corner: ten pins and a ball (original GLB assets). */
   private buildPlayground(): void {
-    const pinRadius = 0.22
-    const pinHeight = 1.1
-    const origin = new THREE.Vector3(-7, -13, 0)
-
+    const origin = new THREE.Vector3(-8, -14, 0)
     for (let row = 0; row < 4; row++) {
       for (let i = 0; i <= row; i++) {
-        const position = new THREE.Vector3(
-          origin.x - row * 1.1,
-          origin.y - row * 0.55 + i * 1.1,
-          pinHeight / 2 + 0.01
-        )
-        const pin = new THREE.Group()
-        const bodyMesh = new THREE.Mesh(
-          new THREE.CylinderGeometry(pinRadius * 0.82, pinRadius, pinHeight, 10),
-          this.materials.matcap('white')
-        )
-        bodyMesh.geometry.rotateX(Math.PI / 2)
-        const stripe = new THREE.Mesh(
-          new THREE.CylinderGeometry(pinRadius * 0.88, pinRadius * 0.9, 0.14, 10),
-          this.materials.matcap('red')
-        )
-        stripe.geometry.rotateX(Math.PI / 2)
-        stripe.position.z = pinHeight * 0.22
-        pin.add(bodyMesh, stripe)
-        this.container.add(pin)
-        this.physics.addObject({
-          shapes: [{ type: 'cylinder', size: new THREE.Vector3(pinRadius, pinRadius, pinHeight) }],
-          position,
-          mass: 0.8
-        }, pin)
+        this.spawnProp('bowlingPin', new THREE.Vector3(
+          origin.x - row * 1.3,
+          origin.y - row * 0.65 + i * 1.3,
+          0
+        ), 1)
+      }
+    }
+    this.spawnProp('bowlingBall', new THREE.Vector3(origin.x + 5, origin.y + 0.8, 0), 2)
+  }
+
+  /** A brick wall to crash through and a slalom of traffic cones. */
+  private buildProps(): void {
+    // brick: box halfExtents (0.3, 0.5, 0.225) -> full 0.6 x 1.0 x 0.45
+    const wall = new THREE.Vector3(2, -8, 0)
+    for (let row = 0; row < 3; row++) {
+      for (let i = 0; i < 4; i++) {
+        const stagger = (row % 2) * 0.5
+        this.spawnProp('brick', new THREE.Vector3(
+          wall.x,
+          wall.y - 2 + i * 1.02 + stagger,
+          row * 0.46
+        ), 0.5)
       }
     }
 
-    const ballRadius = 0.45
-    const ball = new THREE.Group()
-    ball.add(new THREE.Mesh(new THREE.SphereGeometry(ballRadius, 18, 18), this.materials.matcap('teal')))
-    this.container.add(ball)
-    this.physics.addObject({
-      shapes: [{ type: 'sphere', size: new THREE.Vector3(ballRadius, ballRadius, ballRadius) }],
-      position: new THREE.Vector3(origin.x + 4.5, origin.y + 0.6, ballRadius + 0.01),
-      mass: 2
-    }, ball)
+    for (let i = 0; i < 4; i++) {
+      this.spawnProp('cone', new THREE.Vector3(-14 - i * 3.4, i % 2 === 0 ? -1.2 : 1.2, 0), 0.4)
+    }
   }
 
   /** Flat ground labels naming each section, tilted to face the screen. */

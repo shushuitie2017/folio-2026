@@ -118,6 +118,87 @@ export class PhysicsWorld {
     return object
   }
 
+  /**
+   * Pair a visual container with proxies parsed from a collision GLB —
+   * naming convention: cube/box -> Box, cylinder -> Cylinder,
+   * sphere -> Sphere, center -> center of mass. Dimensions follow
+   * the authoring convention of the source assets (box halfExtents =
+   * scale * 0.5, cylinder radius = |scale.x|, height = |scale.z|).
+   */
+  addObjectFromCollision(
+    collisionScene: THREE.Object3D,
+    spec: { position: THREE.Vector3; rotationZ?: number; mass: number; sleep?: boolean },
+    container: THREE.Object3D
+  ): PhysObject {
+    const body = new CANNON.Body({
+      mass: spec.mass,
+      material: this.materials.dummy,
+      position: new CANNON.Vec3(spec.position.x, spec.position.y, spec.position.z)
+    })
+    body.allowSleep = true
+    body.sleepSpeedLimit = 0.01
+    if (spec.rotationZ) {
+      body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), spec.rotationZ)
+    }
+
+    const center = new CANNON.Vec3()
+    const shapes: Array<{ shape: CANNON.Shape; position: CANNON.Vec3; quaternion: CANNON.Quaternion }> = []
+    const cylinderUp = new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2)
+
+    for (const mesh of collisionScene.children) {
+      const scale = mesh.scale
+      let shape: CANNON.Shape | null = null
+      let quaternion = new CANNON.Quaternion(mesh.quaternion.x, mesh.quaternion.y, mesh.quaternion.z, mesh.quaternion.w)
+
+      if (mesh.name.match(/^center/i)) {
+        center.set(mesh.position.x, mesh.position.y, mesh.position.z)
+        continue
+      } else if (mesh.name.match(/^(cube|box)/i)) {
+        shape = new CANNON.Box(new CANNON.Vec3(Math.abs(scale.x) * 0.5, Math.abs(scale.y) * 0.5, Math.abs(scale.z) * 0.5))
+      } else if (mesh.name.match(/^cylinder/i)) {
+        // cannon-es cylinders are Y-axis aligned; stand them up first
+        shape = new CANNON.Cylinder(Math.abs(scale.x), Math.abs(scale.x), Math.abs(scale.z), 8)
+        quaternion = quaternion.mult(cylinderUp)
+      } else if (mesh.name.match(/^sphere/i)) {
+        shape = new CANNON.Sphere(Math.abs(scale.x))
+      }
+      if (!shape) continue
+      shapes.push({ shape, position: new CANNON.Vec3(mesh.position.x, mesh.position.y, mesh.position.z), quaternion })
+    }
+
+    for (const item of shapes) {
+      item.position.vsub(center, item.position)
+      body.addShape(item.shape, item.position, item.quaternion)
+    }
+    body.position.vadd(center, body.position)
+
+    // shift visuals so they orbit the same center of mass
+    for (const child of container.children) {
+      child.position.x -= center.x
+      child.position.y -= center.y
+      child.position.z -= center.z
+    }
+
+    this.world.addBody(body)
+    if (spec.sleep !== false) body.sleep()
+
+    const originPosition = body.position.clone()
+    const originQuaternion = body.quaternion.clone()
+    const object: PhysObject = {
+      body,
+      container,
+      reset: () => {
+        body.velocity.setZero()
+        body.angularVelocity.setZero()
+        body.position.copy(originPosition)
+        body.quaternion.copy(originQuaternion)
+        if (spec.sleep !== false) body.sleep()
+      }
+    }
+    this.objects.push(object)
+    return object
+  }
+
   syncVisuals(): void {
     for (const object of this.objects) {
       object.container.position.set(object.body.position.x, object.body.position.y, object.body.position.z)

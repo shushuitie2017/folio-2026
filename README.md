@@ -30,10 +30,10 @@
 | | |
 |---|---|
 | 🏎️ **本物の車両物理** | RaycastVehicle によるサスペンション・ドリフト・横転からの自動復帰。「もう一周走りたくなる」ハンドリングをチューニング済み |
-| 🎳 **全部倒せる** | タイトルの積み木、プロジェクト看板、ボウリングのピン——世界にあるものはすべて物理オブジェクト。轢き倒してOK |
-| 🐱 **しっぽが揺れる** | 加速すると猫のしっぽが物理っぽく揺れる（実は物理エンジン外の手書きアニメ：逆加速度駆動＋復元力） |
+| 🎳 **全部倒せる** | タイトルの積み木、プロジェクト看板、レンガの壁、ボウリングのピン——世界にあるものはすべて物理オブジェクト。轢き倒してOK |
+| 🐱 **アンテナが揺れる** | 加速するとアンテナが物理っぽく揺れる（実は物理エンジン外の手書きアニメ：逆加速度駆動＋復元力）。屋根には猫耳 |
 | 💡 **ライト0灯で60FPS** | 全シーン無照明。matcap 材質＋2×2ピクセルのグラデーション床で、スマホでも滑らか |
-| 📦 **アセット0ファイル** | 車も看板も文字ブロックも全部コードから生成。glTF もテクスチャ画像も一切ダウンロードしない |
+| 📦 **軽量アセット** | MIT ライセンスの Draco 圧縮ローポリ素材（車まるごと 50KB）＋看板や文字ブロックは実行時にコードで生成 |
 | 🌐 **三言語 UI** | 日本語 / English / 中文 切り替え |
 
 ## 🎮 遊びかた
@@ -69,9 +69,9 @@ pnpm build    # 型チェック + dist/ 出力
 
 ## 🌏 English / 中文
 
-**EN** — A drivable 3D portfolio: steer a little cat-eared car, crash into project boards, and knock over letter blocks. Real vehicle physics (cannon-es RaycastVehicle), zero lights and zero asset files — every mesh, matcap and texture is generated in code at runtime. `pnpm i && pnpm dev` to run locally.
+**EN** — A drivable 3D portfolio: steer a little cat-eared truck, crash into project boards, plow through a brick wall, and go bowling. Real vehicle physics (cannon-es RaycastVehicle), zero lights — MIT-licensed draco-compressed low-poly assets plus boards and letter blocks generated in code at runtime. `pnpm i && pnpm dev` to run locally.
 
-**中文** — 一个「开车逛」的 3D 作品集：驾驶小猫耳车撞倒展板与积木来浏览项目。真实车辆物理（cannon-es RaycastVehicle），全场景零灯光、零资产文件——所有模型与贴图均在运行时由代码生成。`pnpm i && pnpm dev` 本地即跑。
+**中文** — 一个「开车逛」的 3D 作品集：驾驶小猫耳皮卡撞倒展板、冲穿砖墙、打保龄球来浏览项目。真实车辆物理（cannon-es RaycastVehicle），全场景零灯光——MIT 授权的 Draco 压缩低模素材 + 展板文字积木运行时代码生成。`pnpm i && pnpm dev` 本地即跑。
 
 ---
 

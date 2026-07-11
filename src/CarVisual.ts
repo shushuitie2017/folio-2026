@@ -1,22 +1,26 @@
 import * as THREE from 'three'
+import { Assets } from './Assets'
+import { convertMesh } from './Converted'
 import { Materials } from './Materials'
 import { Vehicle } from './Vehicle'
 import { blobTexture } from './textures'
 
 /**
- * The visual blue-cat car. Pure primitives; the tail wobbles with the
- * antenna-wobble algorithm (inverse acceleration + pull-back force).
+ * The visual car, assembled from the original low-poly GLB parts and
+ * repainted blue (bluecat livery) with a pair of cat ears on the roof.
+ * The antenna wobbles via the classic inverse-acceleration algorithm.
  */
 export class CarVisual {
   container = new THREE.Group()
   private chassisGroup = new THREE.Group()
-  private wheels: THREE.Mesh[] = []
-  private tailPivot = new THREE.Group()
+  private wheels: THREE.Object3D[] = []
+  private antenna: THREE.Group
   private brakeLightMaterial: THREE.MeshBasicMaterial
-  private reverseLights: THREE.Mesh[] = []
+  private reverseLightGroup: THREE.Group
   private shadow: THREE.Mesh
+  private readonly wheelFlip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI)
 
-  // tail wobble state
+  // antenna wobble state
   private readonly tail = { speedStrength: 10, damping: 0.035, pullBackStrength: 0.02 }
   private tailSpeed = new THREE.Vector2()
   private tailAbsolute = new THREE.Vector2()
@@ -32,76 +36,44 @@ export class CarVisual {
   private dustIndex = 0
   private dustCooldown = 0
 
-  constructor(private materials: Materials, private vehicle: Vehicle, scene: THREE.Scene) {
-    const blue = materials.matcap('blue')
-    const navy = materials.matcap('navy')
-    const white = materials.matcap('white')
-    const black = materials.matcap('black')
-    const amber = materials.matcap('amber')
+  constructor(private materials: Materials, private vehicle: Vehicle, scene: THREE.Scene, assets: Assets) {
+    // chassis — repaint the red body panels blue for the bluecat livery
+    const chassis = convertMesh(assets.models.carChassis, materials, { red: 'blue' })
+    this.chassisGroup.add(chassis)
 
-    // body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.0, 0.5), blue)
-    body.position.set(0, 0, 0.45)
-    this.chassisGroup.add(body)
+    // wobbly antenna (converted with its own center pivot)
+    this.antenna = convertMesh(assets.models.carAntenna, materials)
+    this.chassisGroup.add(this.antenna)
 
-    const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.9, 0.16), navy)
-    bumper.position.set(0, 0, 0.26)
-    this.chassisGroup.add(bumper)
+    // brake / reverse lights
+    this.brakeLightMaterial = new THREE.MeshBasicMaterial({ color: 0x7a1d14 })
+    const brakeLights = convertMesh(assets.models.carBrakeLights, materials)
+    brakeLights.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) (child as THREE.Mesh).material = this.brakeLightMaterial
+    })
+    this.chassisGroup.add(brakeLights)
 
-    // cabin + glass
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.9, 0.34), white)
-    cabin.position.set(-0.25, 0, 0.87)
-    this.chassisGroup.add(cabin)
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.82, 0.3), navy)
-    glass.position.set(-0.25, 0, 1.14)
-    this.chassisGroup.add(glass)
+    const reverseMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+    this.reverseLightGroup = convertMesh(assets.models.carReverseLights, materials)
+    this.reverseLightGroup.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) (child as THREE.Mesh).material = reverseMaterial
+    })
+    this.reverseLightGroup.visible = false
+    this.chassisGroup.add(this.reverseLightGroup)
 
-    // cat ears
-    const earGeometry = new THREE.ConeGeometry(0.13, 0.3, 4)
+    // cat ears on the cabin roof
+    const earGeometry = new THREE.ConeGeometry(0.11, 0.26, 4)
     earGeometry.rotateX(Math.PI / 2)
     for (const side of [1, -1]) {
-      const ear = new THREE.Mesh(earGeometry, blue)
-      ear.position.set(-0.4, 0.27 * side, 1.42)
+      const ear = new THREE.Mesh(earGeometry, materials.matcap('blue'))
+      ear.position.set(0.18, 0.26 * side, 1.3)
       this.chassisGroup.add(ear)
     }
 
-    // headlights / tail lights
-    const headlightMaterial = new THREE.MeshBasicMaterial({ color: 0xfff6d8 })
-    this.brakeLightMaterial = new THREE.MeshBasicMaterial({ color: 0x7a1d14 })
-    const reverseMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
-    for (const side of [1, -1]) {
-      const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.14), headlightMaterial)
-      headlight.position.set(1.02, 0.3 * side, 0.5)
-      this.chassisGroup.add(headlight)
-
-      const brakeLight = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.14), this.brakeLightMaterial)
-      brakeLight.position.set(-1.02, 0.3 * side, 0.5)
-      this.chassisGroup.add(brakeLight)
-
-      const reverseLight = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.1), reverseMaterial)
-      reverseLight.position.set(-1.03, 0.12 * side, 0.42)
-      reverseLight.visible = false
-      this.chassisGroup.add(reverseLight)
-      this.reverseLights.push(reverseLight)
-    }
-
-    // wobbly cat tail (the antenna)
-    const tailGeometry = new THREE.CylinderGeometry(0.025, 0.045, 0.7, 6)
-    tailGeometry.rotateX(Math.PI / 2)
-    tailGeometry.translate(0, 0, 0.35)
-    const tailMesh = new THREE.Mesh(tailGeometry, navy)
-    const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), amber)
-    tailTip.position.set(0, 0, 0.72)
-    this.tailPivot.add(tailMesh, tailTip)
-    this.tailPivot.position.set(-0.85, 0, 0.72)
-    this.chassisGroup.add(this.tailPivot)
-
     // wheels
-    const wheelGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.24, 14)
-    const hubGeometry = new THREE.CylinderGeometry(0.13, 0.13, 0.26, 10)
+    const wheelProto = convertMesh(assets.models.carWheel, materials)
     for (let i = 0; i < 4; i++) {
-      const wheel = new THREE.Mesh(wheelGeometry, black)
-      wheel.add(new THREE.Mesh(hubGeometry, materials.matcap('gray')))
+      const wheel = wheelProto.clone()
       this.wheels.push(wheel)
       this.container.add(wheel)
     }
@@ -140,12 +112,13 @@ export class CarVisual {
       const transform = this.vehicle.vehicle.wheelInfos[i].worldTransform
       this.wheels[i].position.set(transform.position.x, transform.position.y, transform.position.z)
       this.wheels[i].quaternion.set(transform.quaternion.x, transform.quaternion.y, transform.quaternion.z, transform.quaternion.w)
+      // mirror the right-side hubcaps
+      if (i === 1 || i === 3) this.wheels[i].quaternion.multiply(this.wheelFlip)
     }
 
     // brake / reverse lights
-    this.brakeLightMaterial.color.setHex(this.vehicleBraking() ? 0xff4433 : 0x7a1d14)
-    const reversing = this.vehicle.accelerating < 0
-    for (const light of this.reverseLights) light.visible = reversing
+    this.brakeLightMaterial.color.setHex(this.vehicle.braking ? 0xff4433 : 0x7a1d14)
+    this.reverseLightGroup.visible = this.vehicle.accelerating < 0
 
     // fake shadow follows on the ground plane
     this.shadow.position.x = body.position.x
@@ -153,16 +126,12 @@ export class CarVisual {
     const height = Math.max(body.position.z - 0.3, 0)
     ;(this.shadow.material as THREE.MeshBasicMaterial).opacity = Math.max(0.9 - height * 0.35, 0)
 
-    this.updateTail()
+    this.updateAntenna()
     this.updateDust(deltaMs)
   }
 
-  private vehicleBraking(): boolean {
-    return this.vehicle.braking
-  }
-
   /** Antenna wobble: inverse acceleration drive + pull-back to center. */
-  private updateTail(): void {
+  private updateAntenna(): void {
     const position = this.chassisGroup.position
     const movementSpeed = position.clone().sub(this.lastPosition)
     this.acceleration = movementSpeed.clone().sub(this.movementSpeed)
@@ -183,8 +152,8 @@ export class CarVisual {
 
     const yaw = new THREE.Euler().setFromQuaternion(this.chassisGroup.quaternion, 'ZYX').z
     this.tailLocal.copy(this.tailAbsolute).rotateAround(new THREE.Vector2(), -yaw)
-    this.tailPivot.rotation.y = this.tailLocal.x * 0.12
-    this.tailPivot.rotation.x = this.tailLocal.y * 0.12
+    this.antenna.rotation.y = this.tailLocal.x * 0.1
+    this.antenna.rotation.x = this.tailLocal.y * 0.1
   }
 
   private updateDust(deltaMs: number): void {

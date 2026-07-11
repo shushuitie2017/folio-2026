@@ -101,19 +101,41 @@ const PALETTE: Record<string, string> = {
   green: '#7dbf6a'
 }
 
+const PURES: Record<string, string> = {
+  red: '#ff0000',
+  white: '#ffffff',
+  yellow: '#ffe889'
+}
+
 export type MatcapName = keyof typeof PALETTE | string
 
 export class Materials {
   private cache = new Map<string, THREE.MeshMatcapMaterial>()
+  private pureCache = new Map<string, THREE.MeshBasicMaterial>()
   private textures = new Map<string, THREE.Texture>()
 
+  /** Loaded matcap textures win; anything else falls back to procedural. */
+  constructor(private loadedMatcaps: Record<string, THREE.Texture> = {}) {}
+
   matcapTexture(name: MatcapName): THREE.Texture {
+    const loaded = this.loadedMatcaps[name]
+    if (loaded) return loaded
     let texture = this.textures.get(name)
     if (!texture) {
       texture = makeMatcapTexture(PALETTE[name] ?? name)
       this.textures.set(name, texture)
     }
     return texture
+  }
+
+  /** Flat unlit colors used by `pure*` meshes (headlights etc.). */
+  pure(name: string): THREE.MeshBasicMaterial {
+    let material = this.pureCache.get(name)
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({ color: PURES[name] ?? '#ffffff' })
+      this.pureCache.set(name, material)
+    }
+    return material
   }
 
   /** Shared per color — sharing material instances keeps draw state cheap. */

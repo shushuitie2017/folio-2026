@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { Assets } from './Assets'
 import { Camera } from './Camera'
 import { CarVisual } from './CarVisual'
 import { Controls } from './Controls'
@@ -20,7 +21,7 @@ export class Experience {
   world: World
   private lastTime = 0
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, assets: Assets) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.setSize(window.innerWidth, window.innerHeight)
@@ -29,11 +30,11 @@ export class Experience {
     this.scene = new THREE.Scene()
     this.camera = new Camera(window.innerWidth / window.innerHeight, this.renderer.domElement)
     this.controls = new Controls()
-    this.materials = new Materials()
+    this.materials = new Materials(assets.matcaps)
     this.physics = new PhysicsWorld()
     this.vehicle = new Vehicle(this.physics, this.controls)
-    this.car = new CarVisual(this.materials, this.vehicle, this.scene)
-    this.world = new World(this.materials, this.physics)
+    this.car = new CarVisual(this.materials, this.vehicle, this.scene, assets)
+    this.world = new World(this.materials, this.physics, assets)
 
     this.scene.add(createFloor())
     this.scene.add(this.world.container)
