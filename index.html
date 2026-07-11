@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FOLIO 2026 | BlueCat Workshop — 運転して巡る3Dポートフォリオ</title>
+<meta name="description" content="小さな猫耳カーを運転して、ぶつかって、倒して巡る物理エンジン搭載の3Dポートフォリオ。Three.js + cannon-es 製、ライト0灯で60FPS。">
+<meta property="og:title" content="FOLIO 2026 | BlueCat Workshop">
+<meta property="og:description" content="運転して巡る、ぶつかって遊ぶ3Dポートフォリオ。Three.js + cannon-es。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://raw.githubusercontent.com/shushuitie2017/folio-2026/main/docs/screenshot.jpeg">
+<meta property="og:locale" content="ja_JP">
+<meta name="theme-color" content="#ffca75">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚙</text></svg>">
+<style>
+  :root { --ink:#3a2c18; --accent:#2f6bff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none; }
+  body { font-family:'Segoe UI','Hiragino Sans','Noto Sans JP',system-ui,sans-serif; background:#ffca75; color:var(--ink); touch-action:none; }
+  canvas.webgl { position:fixed; inset:0; outline:none; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  .brand { position:absolute; top:22px; left:26px; }
+  .brand .t { font-size:22px; font-weight:800; letter-spacing:.06em; }
+  .brand .t em { font-style:normal; color:var(--accent); }
+  .brand .s { font-size:12px; opacity:.72; margin-top:2px; letter-spacing:.04em; }
+
+  .topright { position:absolute; top:22px; right:26px; display:flex; gap:8px; align-items:center; pointer-events:auto; }
+  .lang button { border:1px solid rgba(58,44,24,.35); background:rgba(255,255,255,.55); color:var(--ink);
+    font-size:11px; font-weight:700; padding:4px 9px; border-radius:14px; cursor:pointer; }
+  .lang button.on { background:var(--ink); color:#ffe9c2; border-color:var(--ink); }
+  .gh { font-size:11px; font-weight:700; text-decoration:none; color:var(--ink); border:1px solid rgba(58,44,24,.35);
+    background:rgba(255,255,255,.55); padding:4px 10px; border-radius:14px; }
+
+  .hint { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); text-align:center;
+    font-size:13px; letter-spacing:.03em; background:rgba(255,255,255,.6); padding:9px 18px; border-radius:22px;
+    backdrop-filter:blur(4px); transition:opacity 1s; white-space:nowrap; }
+  .hint.gone { opacity:0; }
+  .hint b { color:var(--accent); }
+
+  /* touch controls */
+  #joystick { position:fixed; left:0; bottom:0; width:50%; height:55%; z-index:20; display:none; pointer-events:auto; }
+  #joy-base { position:absolute; width:110px; height:110px; border-radius:50%; border:2px solid rgba(58,44,24,.5);
+    background:rgba(255,255,255,.25); display:none; transform:translate(-50%,-50%); }
+  #joy-stick { position:absolute; width:48px; height:48px; border-radius:50%; background:rgba(58,44,24,.65);
+    left:50%; top:50%; transform:translate(-50%,-50%); }
+  #pedals { position:fixed; right:14px; bottom:26px; z-index:20; display:none; flex-direction:column; gap:12px; pointer-events:auto; }
+  #pedals button { width:74px; height:74px; border-radius:50%; border:2px solid rgba(58,44,24,.5);
+    background:rgba(255,255,255,.45); font-size:26px; color:var(--ink); touch-action:none; }
+  #pedals button:active { background:rgba(58,44,24,.65); color:#ffe9c2; }
+  body.touch #joystick, body.touch #pedals { display:flex; }
+
+  #fade { position:fixed; inset:0; background:#ffca75; z-index:50; pointer-events:none; transition:opacity .9s ease; }
+  #fade.off { opacity:0; }
+  @media (max-width:640px){ .brand .t{font-size:17px} .hint{font-size:11px; bottom:auto; top:72px} }
+</style>
+</head>
+<body>
+<h1 class="sr-only">FOLIO 2026 — BlueCat Workshop 運転して巡る3Dポートフォリオ</h1>
+<canvas class="webgl"></canvas>
+
+<div id="hud">
+  <div class="brand">
+    <div class="t">FOLIO <em>2026</em></div>
+    <div class="s" data-i18n="subtitle"></div>
+  </div>
+  <div class="topright">
+    <span class="lang">
+      <button data-lang="ja">日</button><button data-lang="en">EN</button><button data-lang="zh">中</button>
+    </span>
+    <a class="gh" href="https://github.com/shushuitie2017/folio-2026" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <div class="hint" id="hint" data-i18n="hint"></div>
+</div>
+
+<div id="joystick"><div id="joy-base"><div id="joy-stick"></div></div></div>
+<div id="pedals">
+  <button id="pedal-up">▲</button>
+  <button id="pedal-down">▼</button>
+</div>
+<div id="fade"></div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

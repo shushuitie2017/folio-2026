@@ -1,0 +1,21 @@
+{
+  "name": "folio-2026",
+  "version": "1.0.0",
+  "description": "Drive a little blue-cat car through a knockable 3D workshop — a physics-driven portfolio built with Three.js + cannon-es",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --port 5031",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 5031"
+  },
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.4"
+  }
+}
