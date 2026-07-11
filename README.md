@@ -2,41 +2,41 @@
 
 # 🚙 FOLIO 2026
 
-### ポートフォリオは、読むものじゃない。**運転するものだ。**
+<a href="https://shushuitie2017.github.io/folio-2026/">
+  <img src="docs/screenshot.jpeg" alt="FOLIO 2026 — 猫耳トラックで巡る 3D ポートフォリオ" width="840">
+</a>
 
-小さな猫耳カーでアクセルを踏んで、看板にぶつかって、積み木を蹴散らしながら作品を巡る<br>
-**物理エンジン搭載の 3D ドライブ・ポートフォリオ**
+> *「ポートフォリオは、読むものじゃない。運転するものだ。」*
 
-[![Live Demo](https://img.shields.io/badge/🎮_今すぐ運転する-shushuitie2017.github.io/folio--2026-2f6bff?style=for-the-badge)](https://shushuitie2017.github.io/folio-2026/)
-
+![MIT](https://img.shields.io/badge/license-MIT-6fbf73)
 ![Three.js](https://img.shields.io/badge/Three.js-r185-049EF4?logo=threedotjs&logoColor=white)
 ![cannon-es](https://img.shields.io/badge/physics-cannon--es-ff6b35)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
-![60 FPS](https://img.shields.io/badge/render-0_lights_·_60_FPS-6fbf73)
+![60 FPS](https://img.shields.io/badge/0_lights-60_FPS-e8a33d)
 
-<a href="https://shushuitie2017.github.io/folio-2026/">
-  <img src="docs/screenshot.jpeg" alt="FOLIO 2026 — drive a blue-cat car through a knockable 3D world" width="820">
-</a>
+**スクロールの代わりにアクセルを踏む——猫耳トラックで看板を倒し、レンガ壁を突き破り、ボウリングを蹴散らしながら 12 作品を巡る、本物の車両物理つき 3D ポートフォリオ。**
 
-**WASD で運転 · Shift でブースト · Space でブレーキ · R でリセット · 看板をクリックで作品が開く**
+<sub>Three.js + cannon-es + TypeScript + Vite · ライト 0 灯 · 車まるごと 50KB</sub>
+
+### [▶ 今すぐ運転する](https://shushuitie2017.github.io/folio-2026/)
+
+[こんな感じ](#-こんな感じ) · [操作](#-操作) · [手元で動かす](#-手元で動かす) · [特徴](#-特徴) · [しくみ](#-しくみ) · [作者](#-作者について)
 
 </div>
 
 ---
 
-## ✨ なにこれ？
+## 🎬 こんな感じ
 
-| | |
-|---|---|
-| 🏎️ **本物の車両物理** | RaycastVehicle によるサスペンション・ドリフト・横転からの自動復帰。「もう一周走りたくなる」ハンドリングをチューニング済み |
-| 🎳 **全部倒せる** | タイトルの積み木、プロジェクト看板、レンガの壁、ボウリングのピン——世界にあるものはすべて物理オブジェクト。轢き倒してOK |
-| 🐱 **アンテナが揺れる** | 加速するとアンテナが物理っぽく揺れる（実は物理エンジン外の手書きアニメ：逆加速度駆動＋復元力）。屋根には猫耳 |
-| 💡 **ライト0灯で60FPS** | 全シーン無照明。matcap 材質＋2×2ピクセルのグラデーション床で、スマホでも滑らか |
-| 📦 **軽量アセット** | MIT ライセンスの Draco 圧縮ローポリ素材（車まるごと 50KB）＋看板や文字ブロックは実行時にコードで生成 |
-| 🌐 **三言語 UI** | 日本語 / English / 中文 切り替え |
+<div align="center">
+  <a href="https://shushuitie2017.github.io/folio-2026/">
+    <img src="docs/action.jpeg" alt="文字ブロックを跳ね飛ばす瞬間" width="840">
+  </a>
+</div>
 
-## 🎮 遊びかた
+タイトルの積み木に突っ込むと「F」が宙を舞い、コーンが転がり、看板は轢き倒せる。**世界にある 59 個のオブジェクト全部が物理で動く——そして倒した看板をクリックすると、その作品サイトが開く。**
+
+## 🎮 操作
 
 | 操作 | キー / タッチ |
 |---|---|
@@ -44,41 +44,86 @@
 | ブースト | `Shift` |
 | ブレーキ | `Space` |
 | 世界をリセット | `R` |
-| ズーム | マウスホイール / ピンチ |
+| ズーム | ホイール / ピンチ |
 | 作品を開く | 看板をクリック / タップ |
 
-## 🔧 動かす
+## 🔧 手元で動かす
 
 ```bash
-pnpm install
-pnpm dev      # http://localhost:5031
-pnpm build    # 型チェック + dist/ 出力
+pnpm install && pnpm dev   # → http://localhost:5031
 ```
 
-## 🏗️ しくみ（5層アーキテクチャ）
+<details>
+<summary>ビルド / プレビュー</summary>
 
+```bash
+pnpm build     # 型チェック + dist/ 出力
+pnpm preview   # 本番ビルドの確認
 ```
-┌─ 描画層     matcap 材質 + 疑似バウンスライト + 2×2 DataTexture 床（照明ゼロ）
-├─ 物理層     cannon-es RaycastVehicle + プリミティブ代理形状 + sleep 戦略
-├─ 内容層     セクション制：JSON データ駆動の看板・積み木・ボウリング場
-├─ 操作層     キーボード＋タッチジョイスティック、弾性追従カメラ
-└─ 空気感層   しっぽ揺れ・砂埃パーティクル・ブレーキランプ・偽ブロブ影
-```
+</details>
 
-ポイントは**物理と見た目の完全分離**：物理エンジンは箱・円柱・球しか知らず、毎フレーム座標だけを見た目側へ同期する。静止物は全部 `sleep()` で寝かせておくので、衝突判定のコストは「いま動いているもの」の分しか払わない。
+## ✨ 特徴
 
-## 🌏 English / 中文
+| | |
+|---|---|
+| 🏎️ **本物の車両物理** | RaycastVehicle のサスペンション・ドリフト・横転からの 1 秒自動復帰。手を離すと 1〜2 秒でピタッと止まる調整済みハンドリング |
+| 🎳 **全部倒せる** | 積み木 16 個・看板 14 枚・ボウリングピン 10 本・レンガ 12 個・コーン 4 本——静止物は全部 sleep して、起きてる剛体は平常時 **1 個だけ** |
+| 💡 **ライト 0 灯で 60 FPS** | 照明なし。matcap 材質＋2×2 ピクセルのグラデーション床で描画コストほぼゼロ（draw call 144 / 約 1 万トライアングル） |
+| 🐱 **アンテナが揺れる** | 加速すると赤玉アンテナがぷるぷる揺れる。物理エンジン外の手書きアニメ：逆加速度駆動＋復元力 |
+| 📦 **Draco 圧縮ローポリ** | 車 5 パーツ合計 50KB。看板・文字ブロック・地面マーカーは実行時に canvas で生成 |
+| 🌐 **三言語 UI** | 日本語 / English / 中文、ワンクリック切り替え |
 
-**EN** — A drivable 3D portfolio: steer a little cat-eared truck, crash into project boards, plow through a brick wall, and go bowling. Real vehicle physics (cannon-es RaycastVehicle), zero lights — MIT-licensed draco-compressed low-poly assets plus boards and letter blocks generated in code at runtime. `pnpm i && pnpm dev` to run locally.
+## ⚙️ しくみ
 
-**中文** — 一个「开车逛」的 3D 作品集：驾驶小猫耳皮卡撞倒展板、冲穿砖墙、打保龄球来浏览项目。真实车辆物理（cannon-es RaycastVehicle），全场景零灯光——MIT 授权的 Draco 压缩低模素材 + 展板文字积木运行时代码生成。`pnpm i && pnpm dev` 本地即跑。
+1. **物理と見た目は完全分離** —— 物理エンジンは箱・円柱・球しか知らない。`collision.glb` の命名規約（`cube_*` / `cylinder_*` / `sphere_*` / `center_*`）から代理形状を組み、毎フレーム座標だけを見た目側へ一方通行で同期する
+2. **matcap で照明を偽装** —— メッシュ名 `shadeRed_*` → 赤 matcap のように材質を割り当て。ライト計算もシャドウマップも存在しない
+3. **sleep 戦略** —— 静止オブジェクトは生成時に全部 `body.sleep()`。衝突コストは「いま動いているもの」の分しか払わない
+4. **内容はデータ駆動** —— 看板 12 枚は `src/projects.ts` の配列。差し替えれば世界が組み変わる
+
+## 🙅 正直な限界
+
+- 音はまだ鳴らない（エンジン音・衝突音なし）
+- セーブなし——倒した看板はリロードか `R` で元通り
+- 実行時 canvas 生成のテキストはフォントが環境依存（Segoe UI / ヒラギノ前提）
+
+## 👤 作者について
+
+**蓝猫 BlueCat** — AI-native builder。ブラウザで動く 3D・ゲーム・ツールを量産中。
+
+| | |
+|---|---|
+| 🐙 GitHub | [@shushuitie2017](https://github.com/shushuitie2017) |
+| 🏠 ポータル | [bluecatbot.com](https://bluecatbot.com) |
+
+<img src="docs/wechat-qr.jpg" alt="WeChat" width="200">
+
+### 🚀 ほかにも作ってます
+
+| プロジェクト | 一言 |
+|---|---|
+| [HardwareLab](https://hardware.bluecatbot.com) | 3D で分解して学ぶハードウェア教室（66 部品・16 アニメ） |
+| [GameBox](https://gamebox.bluecatbot.com) | ブラウザ 3D ゲームの積み木 74 モジュール |
+| [MODKEYS](https://keyboard.bluecatbot.com) | 3D カスタムキーボード・コンフィギュレータ |
+| [SVGSafe](https://svg.bluecatbot.com) | ライセンス明記の無料 SVG 素材 6000+ |
+
+## ライセンス
+
+**MIT —— ご自由にどうぞ。**
 
 ---
 
 <div align="center">
 
-**BlueCat Workshop** · [bluecatbot.com](https://bluecatbot.com) · [GitHub @shushuitie2017](https://github.com/shushuitie2017)
+*「ポートフォリオは、読むものじゃない。運転するものだ。」*
 
-MIT License
+**[▶ 運転しに行く](https://shushuitie2017.github.io/folio-2026/)**
 
 </div>
+
+## English
+
+**A portfolio you drive, not scroll.** Steer a cat-eared truck through a knockable 3D world: ram the letter blocks, plow through a brick wall, go bowling — then click any board you knocked over to open that project. Real vehicle physics (cannon-es RaycastVehicle), zero lights at 60 FPS via matcaps, the whole car in 50KB of draco-compressed GLB. [Drive it now](https://shushuitie2017.github.io/folio-2026/) or run locally with `pnpm i && pnpm dev`.
+
+## 中文
+
+**不用滚动、踩油门逛的作品集。** 开一辆猫耳皮卡在可撞倒的 3D 世界里横冲直撞：撞散标题积木、冲穿砖墙、打保龄球——撞倒的每块展板点一下就打开对应项目。真实车辆物理（cannon-es RaycastVehicle），零灯光 matcap 渲染 60 FPS，整辆车只有 50KB。[现在就去开](https://shushuitie2017.github.io/folio-2026/)，或 `pnpm i && pnpm dev` 本地跑。
